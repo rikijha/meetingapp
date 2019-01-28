@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.web.myapp.mail.MailService;
+//import com.web.myapp.mail.MailService;
 import com.web.myapp.model.Credential;
 import com.web.myapp.model.User;
 import com.web.myapp.repository.CredentialRespository;
@@ -31,10 +32,13 @@ public class UserController {
   @Autowired
   CredentialRespository credentialRespository;
   
+  @Autowired
+  PasswordEncoder passwordEncoder;
+  
   Map<String, Integer> map=new HashMap<>();
   
-  @Autowired
-  private MailService mailService;
+  //@Autowired
+ // private MailService mailService;
   
   @GetMapping("/user/{id}")
   public Optional<User> getUser(@PathVariable("id") int id) {
@@ -48,6 +52,7 @@ public class UserController {
   
   @PostMapping("/user")
   public User createUser(@RequestBody User user) {
+	  user.setRole(user.getRole().toUpperCase());
 	  return userRepository.save(user);
   }
   
@@ -68,8 +73,8 @@ public class UserController {
   @GetMapping("/user/generatecode/{email}")
   public int generateCode(@PathVariable("email") String email) {
 	  int code=new Random().nextInt(100000);
-	  User user=userRepository.findByEmail(email);
-	  mailService.sendEmail(user);
+	  //User user=userRepository.findByEmail(email);
+	  //mailService.sendEmail(user);
 	  map.put(email, code);
 	  return code;
 	  
@@ -89,6 +94,7 @@ public class UserController {
   
   @PostMapping("/user/setpassword/{email}")
   public User setPassword(@PathVariable("email") String email,@RequestBody Credential credential) {
+	  credential.setPassword(passwordEncoder.encode(credential.getPassword()));
 	  User user=userRepository.findByEmail(email);
 	  credential.setUsername(user.getEmail());
 	  Credential c=credentialRespository.save(credential);
@@ -99,9 +105,11 @@ public class UserController {
   @PostMapping("/user/authenticate")
   public User validateUser(@RequestBody Credential credential) {
 	  Credential c=credentialRespository.findByUsername(credential.getUsername());
-	  if(c.getPassword().equals(credential.getPassword())) {
+	  if(passwordEncoder.matches(credential.getPassword(), c.getPassword())) {
 		  return userRepository.findByEmail(credential.getUsername());
 	  } 
+	  
+	  
 	  return null;
   }
   

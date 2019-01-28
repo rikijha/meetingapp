@@ -16,7 +16,7 @@ public class Credential {
 	@ApiModelProperty(hidden=true)
 	private int id;
     
-	@ApiModelProperty(hidden=true)
+
 	private String username;
 
 	public String getUsername() {
